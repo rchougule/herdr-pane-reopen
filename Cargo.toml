@@ -1,0 +1,30 @@
+[package]
+name = "reopen"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.96.1"
+description = "Undo close: reopen the last closed pane, tab, or workspace in its original place and resume its agent."
+license = "MIT"
+repository = "https://github.com/rchougule/herdr-pane-reopen"
+
+[lib]
+name = "reopen"
+path = "src/lib.rs"
+
+[[bin]]
+name = "reopen"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+rustix = { version = "1", features = ["fs", "process"] }
+regex = "1"
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+strip = true

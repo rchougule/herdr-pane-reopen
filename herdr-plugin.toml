@@ -1,0 +1,93 @@
+id = "rchougule.reopen"
+name = "Reopen"
+version = "0.1.0"
+min_herdr_version = "0.9.1"
+description = "Undo close: reopen the last closed pane, tab, or workspace in its original place and resume its agent."
+platforms = ["macos", "linux"]
+
+[[build]]
+command = ["cargo", "build", "--release"]
+
+[[startup]]
+command = ["target/release/reopen", "startup"]
+
+# --- undo triggers ---
+[[events]]
+on = "pane.closed"
+command = ["target/release/reopen", "event"]
+
+[[events]]
+on = "tab.closed"
+command = ["target/release/reopen", "event"]
+
+[[events]]
+on = "workspace.closed"
+command = ["target/release/reopen", "event"]
+
+[[events]]
+on = "pane.exited"
+command = ["target/release/reopen", "event"]
+
+# --- shadow-cache refresh + daemon re-arm (self-healing) ---
+[[events]]
+on = "pane.created"
+command = ["target/release/reopen", "event"]
+
+[[events]]
+on = "tab.created"
+command = ["target/release/reopen", "event"]
+
+[[events]]
+on = "workspace.created"
+command = ["target/release/reopen", "event"]
+
+[[events]]
+on = "pane.focused"
+command = ["target/release/reopen", "event"]
+
+[[events]]
+on = "pane.agent_detected"
+command = ["target/release/reopen", "event"]
+
+[[events]]
+on = "pane.agent_status_changed"
+command = ["target/release/reopen", "event"]
+
+[[actions]]
+id = "reopen-last"
+title = "Reopen: undo last close (pane / tab / workspace)"
+description = "Recreates the most recently closed pane, tab, or workspace where it was and resumes its agent session."
+contexts = ["global"]
+command = ["target/release/reopen", "reopen-last"]
+
+[[actions]]
+id = "list"
+title = "Reopen: show recently closed"
+contexts = ["global"]
+command = ["target/release/reopen", "list"]
+
+[[actions]]
+id = "doctor"
+title = "Reopen: diagnose"
+contexts = ["global"]
+command = ["target/release/reopen", "doctor"]
+
+# Popup picker is DEFERRED TO v0.2. The popup route works but carries four sharp edges
+# (no pane id, no argv, `ui_busy` refusal while any modal is open, must spawn
+# `reopen reopen --id N` detached). `list` + `reopen reopen --id N` already meets the
+# requirement.
+# The [[panes]] block stays so v0.2 needs no manifest change; the launching action does not.
+#
+# [[actions]]
+# id = "pick"
+# title = "Reopen: pick from recently closed…"
+# contexts = ["global"]
+# command = ["target/release/reopen", "pick-launch"]
+
+[[panes]]
+id = "picker"
+title = "reopen"
+placement = "popup"
+width = 90
+height = 14
+command = ["sh", "-c", "exec \"$HERDR_PLUGIN_ROOT/target/release/reopen\" pick"]
