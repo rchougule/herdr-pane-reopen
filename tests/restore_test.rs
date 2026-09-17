@@ -216,3 +216,58 @@ args = ["--continue", "{id}"]
     // a broken config degrades to defaults instead of killing the hook
     assert_eq!(Config::parse("this is not toml = = =").entry_ttl_hours, 24);
 }
+
+// ---------------------------------------------------------------- agent liveness
+
+fn info(shell_pid: i64, procs: &[(i64, &str)]) -> reopen::snapshot::RawProcessInfo {
+    serde_json::from_value(serde_json::json!({
+        "pane_id": "p1",
+        "shell_pid": shell_pid,
+        "foreground_processes": procs.iter().map(|(pid, a0)| serde_json::json!({
+            "pid": pid, "argv0": a0, "argv": [a0], "cwd": "/private/tmp"
+        })).collect::<Vec<_>>(),
+    }))
+    .unwrap()
+}
+
+#[test]
+fn a_pane_with_only_its_shell_is_exited() {
+    assert_eq!(
+        pane_liveness(Some(&info(100, &[(100, "zsh")]))),
+        Liveness::Exited
+    );
+}
+
+#[test]
+fn a_pane_running_an_agent_is_alive() {
+    // Real shape: claude rewrites its process NAME to a version string, so only argv0
+    // identifies it — and the classifier does not even look at which binary it is.
+    assert_eq!(
+        pane_liveness(Some(&info(100, &[(100, "zsh"), (200, "claude")]))),
+        Liveness::Alive
+    );
+}
+
+#[test]
+fn a_pane_running_anything_else_is_alive_too_and_is_left_alone() {
+    assert_eq!(
+        pane_liveness(Some(&info(100, &[(100, "zsh"), (200, "vim")]))),
+        Liveness::Alive
+    );
+}
+
+#[test]
+fn a_shell_startup_burst_is_not_mistaken_for_an_agent() {
+    // `starship prompt` and friends are the shell's own bookkeeping, not an occupant.
+    assert_eq!(
+        pane_liveness(Some(&info(100, &[(100, "zsh"), (201, "starship")]))),
+        Liveness::Exited
+    );
+}
+
+#[test]
+fn a_sample_we_did_not_get_is_unknown() {
+    assert_eq!(pane_liveness(None), Liveness::Unknown);
+    // An empty payload (herdr answered, but with nothing in it) is not evidence either.
+    assert_eq!(pane_liveness(Some(&info(0, &[]))), Liveness::Unknown);
+}

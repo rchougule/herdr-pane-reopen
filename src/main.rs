@@ -317,6 +317,12 @@ fn cmd_reopen(app: &App, id: Option<u64>) {
         if report.resumed > 0 {
             body.push_str(&format!(" · {} agent(s) resumed", report.resumed));
         }
+        if report.started_fresh > 0 {
+            body.push_str(&format!(
+                " · {} started fresh (nothing to resume)",
+                report.started_fresh
+            ));
+        }
         if !report.failed.is_empty() {
             body.push_str(&format!(" · {} could not resume", report.failed.len()));
         }

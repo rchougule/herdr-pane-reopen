@@ -15,6 +15,7 @@ pub mod restore;
 pub mod rpc;
 pub mod snapshot;
 pub mod store;
+pub mod transcript;
 
 /// Socket protocol this plugin was verified against (herdr 0.9.1).
 pub const EXPECTED_PROTOCOL: u32 = 22;

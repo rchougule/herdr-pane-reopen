@@ -252,3 +252,36 @@ pub fn default_reply(
         })
     }
 }
+
+// ---------------------------------------------------------------- restore Ctx
+
+use reopen::config::Config;
+use reopen::restore::{Ctx, Verify};
+use reopen::store::Store;
+
+/// Fast timings for the post-start liveness check: the same state machine the real
+/// restore runs, in milliseconds instead of seconds.
+pub fn fast_verify() -> Verify {
+    Verify {
+        budget_ms: 60,
+        interval_ms: 5,
+        settle_ms: 20,
+        exit_streak: 2,
+    }
+}
+
+/// A `Ctx` for driver tests. `projects_dir` defaults to `None` — "no Claude Code
+/// transcript store we can consult" — so the pre-check never reaches the developer's
+/// real `~/.claude/projects`. Tests that exercise the pre-check pass a tempdir.
+pub fn test_ctx<'a>(
+    client: &'a dyn Rpc,
+    store: &'a Store,
+    cfg: &'a Config,
+    projects_dir: Option<std::path::PathBuf>,
+) -> Ctx<'a> {
+    Ctx {
+        verify: fast_verify(),
+        projects_dir,
+        ..Ctx::new(client, store, cfg)
+    }
+}

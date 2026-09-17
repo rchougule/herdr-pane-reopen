@@ -316,6 +316,16 @@ fn is_candidate(p: &RawProcess, shell_pid: i64) -> bool {
     !is_housekeeping_cwd(&p.cwd)
 }
 
+/// Every foreground process that is not the pane's own shell, a wrapper, a transient
+/// shell built-in or pure housekeeping — i.e. "what this pane is actually running".
+/// An empty result means the pane is sitting at a bare prompt.
+pub fn live_children(info: &RawProcessInfo) -> Vec<&RawProcess> {
+    info.foreground_processes
+        .iter()
+        .filter(|p| is_candidate(p, info.shell_pid))
+        .collect()
+}
+
 /// Pick the command a non-agent pane is running. Match on `argv0`/`argv[0]` — never on
 /// `name`, which is the process *title* (claude rewrites it; see docs/HERDR_API_NOTES.md).
 /// The oldest remaining process (smallest pid) is the shell's direct child.
@@ -503,7 +513,8 @@ pub const CONFIRM_DELAY_MS: u64 = 120;
 /// never turn into a second full sweep.
 pub const CONFIRM_MAX_PANES: usize = 4;
 
-fn process_info_of(c: &dyn Rpc, pane_id: &str) -> Option<RawProcessInfo> {
+/// One `pane.process_info` sample, or `None` when the call failed.
+pub fn process_info_of(c: &dyn Rpc, pane_id: &str) -> Option<RawProcessInfo> {
     match c.call("pane.process_info", json!({ "pane_id": pane_id })) {
         Ok(v) => Some(
             v.get("process_info")

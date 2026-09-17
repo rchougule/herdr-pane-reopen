@@ -29,6 +29,13 @@
   receive (`layout.updated`, `pane.updated`, `pane.moved`, `tab.moved`). It is re-armed by
   the next hook if it ever dies.
 
+- **A resumed agent is verified.** `agent.start` succeeding only means herdr launched the
+  command; `claude --resume` on a session with no transcript exits a moment later. So a
+  `claude` session is looked up in `~/.claude/projects` before it is resumed, and every
+  resume is followed by up to 4 s of `pane.process_info` polling. Two consecutive samples
+  showing nothing but the shell mean the agent is gone, and the agent is started once
+  more without resume arguments. Never twice, and never on a pane we could not observe.
+
 **Pane-granularity caveat.** When the closed pane's sibling was itself a split, reopen
 puts the pane back on the *opposite* side of that split. Rebuilding it exactly would need
 a destructive `layout.apply`, which would kill the surviving panes' processes. The restore

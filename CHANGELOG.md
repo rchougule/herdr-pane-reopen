@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.1] - 2026-09-18
+
+### Fixed
+
+- A restored pane always comes back with a live agent. Reopening a pane whose agent had
+  taken no turns ran `claude --resume <id>`, which printed
+  `No conversation found with session ID: …` and exited, leaving the pane at a bare
+  shell.
+  - Before resuming a Claude Code session, reopen checks `~/.claude/projects` for its
+    transcript (the pane's own project directory, then every other one, so a changed
+    working directory or a git worktree still matches). If there is none, it starts a
+    fresh `claude` and reports *started a fresh Claude session: the closed one had no
+    conversation to resume*.
+  - After any resume, for any agent kind, reopen polls `pane.process_info` for up to four
+    seconds and, if the pane is observed back at a bare prompt, starts the agent once
+    more without the resume arguments and reports it. At most one fallback; a slow cold
+    start is never mistaken for an exit, and a pane that cannot be observed is left alone.
+- The restore report and the reopen notification now count agents that had to be started
+  fresh (`started_fresh`) separately from resumed ones.
+
 ## [0.1.0] - 2026-09-18
 
 ### Added
@@ -28,4 +48,5 @@ All notable changes to this project are documented here. The format follows
 - Resume arguments for agents other than Claude Code are taken from their documentation and
   can be overridden in the plugin config.
 
+[0.1.1]: https://github.com/rchougule/herdr-pane-reopen/releases/tag/v0.1.1
 [0.1.0]: https://github.com/rchougule/herdr-pane-reopen/releases/tag/v0.1.0

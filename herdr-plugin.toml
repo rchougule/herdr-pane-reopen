@@ -1,6 +1,6 @@
 id = "rchougule.reopen"
 name = "Reopen"
-version = "0.1.0"
+version = "0.1.1"
 min_herdr_version = "0.9.1"
 description = "Undo close: reopen the last closed pane, tab, or workspace in its original place and resume its agent."
 platforms = ["macos", "linux"]

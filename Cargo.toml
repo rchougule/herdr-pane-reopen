@@ -1,6 +1,6 @@
 [package]
 name = "reopen"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.96.1"
 description = "Undo close: reopen the last closed pane, tab, or workspace in its original place and resume its agent."

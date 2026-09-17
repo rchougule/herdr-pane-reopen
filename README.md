@@ -106,9 +106,26 @@ args = ["--session-id", "{id}"]        # {id} is substituted verbatim
 ```
 
 herdr only reports a session id when the agent's integration is installed
-(`herdr integration status`). If a resume fails, reopen falls back to prefilling the
-command at the prompt. An agent session with no turns has no transcript yet, so resuming
-it lands on a fresh prompt; that is the agent CLI's behaviour.
+(`herdr integration status`). If `agent.start` itself fails, reopen falls back to
+prefilling the command at the prompt.
+
+**The pane always comes back with a live agent.** A resume can be accepted by herdr and
+still leave you at a bare shell a second later: `claude --resume <id>` on a session that
+never took a turn prints `No conversation found with session ID: …` and exits, because
+Claude Code writes the transcript only once the conversation has something in it. Two
+guards prevent that:
+
+- **Before resuming a `claude` session**, reopen looks for its transcript in
+  `~/.claude/projects` (the pane's own project directory first, then every other one, so
+  a changed cwd or a git worktree still matches). No transcript → it starts a plain
+  `claude` and the restore report says *started a fresh Claude session: the closed one
+  had no conversation to resume*.
+- **After any resume, for any agent kind**, reopen watches the new pane for up to four
+  seconds. If the pane is observed back at a bare prompt — two consecutive
+  `pane.process_info` samples with nothing but the shell in them — it starts the agent
+  once more without the resume arguments and says so. It never does this twice, and a
+  slow cold start is not mistaken for an exit: only an observed exit counts, and a pane
+  reopen cannot observe is left exactly as it is.
 
 ## Configuration
 

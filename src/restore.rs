@@ -190,6 +190,9 @@ pub struct Report {
     pub summary: String,
     pub created: Created,
     pub resumed: usize,
+    /// Agents that came back as a NEW session because the recorded one could not be
+    /// resumed (no transcript on disk, or the resumed process exited immediately).
+    pub started_fresh: usize,
     pub prefilled: usize,
     pub failed: Vec<String>,
     pub notes: Vec<String>,
@@ -275,6 +278,12 @@ pub struct Ctx<'a> {
     pub cfg: &'a Config,
     /// Allow/deny patterns compiled ONCE per restore instead of once per pane.
     pub rerun: CompiledRerun,
+    /// How long the post-start liveness check may take. A field, not a constant, so
+    /// tests can run the same state machine in milliseconds.
+    pub verify: Verify,
+    /// Claude Code's transcript store (`~/.claude/projects`). `None` disables the
+    /// pre-check. Injected so tests never touch the real one.
+    pub projects_dir: Option<std::path::PathBuf>,
 }
 
 impl<'a> Ctx<'a> {
@@ -284,6 +293,8 @@ impl<'a> Ctx<'a> {
             store,
             cfg,
             rerun: CompiledRerun::new(&cfg.rerun),
+            verify: Verify::default(),
+            projects_dir: crate::transcript::default_projects_dir(),
         }
     }
 }
@@ -702,7 +713,204 @@ fn restore_pane_granularity(entry: &ClosedEntry, ctx: &Ctx, live: &Live, report:
     }
 }
 
+// ------------------------------------------------------- agent liveness (post-check)
+
+/// What a `pane.process_info` sample says about the pane's occupant.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Liveness {
+    /// Something other than the shell is running in the pane.
+    Alive,
+    /// The pane is sitting at a bare prompt: whatever we started is gone.
+    Exited,
+    /// No usable sample. NEVER a reason to act.
+    Unknown,
+}
+
+/// Pure classifier over one `pane.process_info` sample.
+///
+/// Deliberately kind-agnostic: "is the pane back at a bare shell" is the only question
+/// that can be answered reliably, because `process_info`'s `name` is the process TITLE
+/// (claude rewrites its own to the version string, see docs/HERDR_API_NOTES.md) and an
+/// agent may run under an interpreter. If ANY non-shell child is there, we leave the
+/// pane alone, whatever it is.
+pub fn pane_liveness(info: Option<&crate::snapshot::RawProcessInfo>) -> Liveness {
+    let Some(info) = info else {
+        return Liveness::Unknown;
+    };
+    // A sample with neither a shell pid nor any process carries no information.
+    if info.shell_pid == 0 && info.foreground_processes.is_empty() {
+        return Liveness::Unknown;
+    }
+    if crate::snapshot::live_children(info).is_empty() {
+        Liveness::Exited
+    } else {
+        Liveness::Alive
+    }
+}
+
+/// Timings for the post-start liveness check.
+///
+/// The asymmetry is the whole point. `claude --resume <dead id>` prints its error and
+/// exits in well under a second, while a cold start can sit on a blank screen for
+/// several — so "exited" must be CONFIRMED by consecutive samples, and "alive" is only
+/// trusted once `settle_ms` has passed, by which time the agent would already have died
+/// had its resume been rejected.
+#[derive(Debug, Clone, Copy)]
+pub struct Verify {
+    pub budget_ms: u64,
+    pub interval_ms: u64,
+    pub settle_ms: u64,
+    /// Consecutive `Exited` samples required before we act.
+    pub exit_streak: u32,
+}
+
+impl Default for Verify {
+    fn default() -> Self {
+        Verify {
+            budget_ms: 4_000,
+            interval_ms: 400,
+            settle_ms: 1_600,
+            exit_streak: 2,
+        }
+    }
+}
+
+/// Poll `pane.process_info` until the pane's occupant is confirmed alive or confirmed
+/// gone. `Unknown` when neither is established inside the budget — the conservative
+/// answer, which changes nothing.
+fn verify_agent(pane_id: &str, ctx: &Ctx) -> Liveness {
+    let v = ctx.verify;
+    let start = std::time::Instant::now();
+    let mut streak = 0u32;
+    loop {
+        std::thread::sleep(std::time::Duration::from_millis(v.interval_ms));
+        let elapsed = start.elapsed().as_millis() as u64;
+        let last = pane_liveness(crate::snapshot::process_info_of(ctx.client, pane_id).as_ref());
+        match last {
+            Liveness::Exited => {
+                streak += 1;
+                if streak >= v.exit_streak {
+                    return Liveness::Exited;
+                }
+            }
+            Liveness::Alive => {
+                streak = 0;
+                if elapsed >= v.settle_ms {
+                    return Liveness::Alive;
+                }
+            }
+            Liveness::Unknown => streak = 0,
+        }
+        if elapsed >= v.budget_ms {
+            // Out of budget while still looking alive: that is good enough.
+            return if last == Liveness::Alive {
+                Liveness::Alive
+            } else {
+                Liveness::Unknown
+            };
+        }
+    }
+}
+
 // ---------------------------------------------------------------- occupants
+
+/// Start an agent in a restored pane, resuming its conversation when that can work.
+///
+/// Two guards stand between "herdr recorded a session id" and "the user gets a live
+/// agent back" (F21):
+///
+/// 1. **Pre-check.** For `claude` we can tell from disk whether the session was ever
+///    written. A pane where `claude` had only just started and taken no turns has no
+///    transcript, and `--resume` on it exits straight back to the shell — so a fresh
+///    session is started instead, and the report says so.
+/// 2. **Post-check.** For every kind, after a resume the pane is watched for a few
+///    seconds; if the process is observed to have exited, the agent is started once more
+///    WITHOUT the resume arguments. At most one fallback, ever.
+fn restore_agent(
+    kind: &str,
+    id: &str,
+    pane: &PaneSnap,
+    new_pane_id: &str,
+    ctx: &Ctx,
+    report: &mut Report,
+) {
+    let Some((resume_args, confidence)) = agents::resume_args(ctx.cfg, kind, id) else {
+        report.fail(format!(
+            "{new_pane_id}: cannot resume {kind} (unsupported kind; set [resume.{kind}] in config.toml)"
+        ));
+        return;
+    };
+
+    // ---- 1. pre-check
+    if crate::transcript::check(ctx.projects_dir.as_deref(), kind, &pane.cwd, id).is_missing() {
+        linfo!("{new_pane_id}: no {kind} transcript for {id}; starting a fresh session");
+        match start_agent(kind, &[], new_pane_id, pane, ctx, report) {
+            Ok(name) => {
+                report.started_fresh += 1;
+                report.note(format!(
+                    "{new_pane_id}: started a fresh {kind} session: the closed one had no \
+                     conversation to resume"
+                ));
+                linfo!("started fresh {kind} as '{name}' in {new_pane_id}");
+            }
+            Err(e) => fallback_to_prefill(kind, &[], new_pane_id, e, ctx, report),
+        }
+        return;
+    }
+
+    // ---- 2. resume, then post-check
+    match start_agent(kind, &resume_args, new_pane_id, pane, ctx, report) {
+        Ok(name) => {
+            if verify_agent(new_pane_id, ctx) == Liveness::Exited {
+                lwarn!("{new_pane_id}: {kind} exited right after resume; starting a fresh session");
+                match start_agent(kind, &[], new_pane_id, pane, ctx, report) {
+                    Ok(_) => {
+                        report.started_fresh += 1;
+                        report.note(format!(
+                            "{new_pane_id}: {kind} exited immediately after --resume, so a fresh \
+                             {kind} session was started instead"
+                        ));
+                    }
+                    Err(e) => report.fail(format!(
+                        "{new_pane_id}: {kind} exited after resume and could not be restarted: {}",
+                        e.message
+                    )),
+                }
+                return;
+            }
+            linfo!(
+                "resumed {kind} as '{name}' in {new_pane_id} ({})",
+                confidence.as_str()
+            );
+            report.resumed += 1;
+        }
+        Err(e) => fallback_to_prefill(kind, &resume_args, new_pane_id, e, ctx, report),
+    }
+}
+
+/// `agent.start` itself failed: prefill the command at the prompt when that is safe.
+fn fallback_to_prefill(
+    kind: &str,
+    args: &[String],
+    new_pane_id: &str,
+    e: StartFailure,
+    ctx: &Ctx,
+    report: &mut Report,
+) {
+    report.fail(format!(
+        "{new_pane_id}: could not resume {kind}: {}",
+        e.message
+    ));
+    if e.safe_to_prefill {
+        let mut argv = vec![kind.to_string()];
+        argv.extend(args.iter().cloned());
+        prefill(&argv, new_pane_id, ctx, report);
+    } else {
+        report.note(format!(
+            "{new_pane_id}: not prefilling — herdr may still be starting the agent in this pane"
+        ));
+    }
+}
 
 fn restore_occupant(pane: &PaneSnap, new_pane_id: &str, ctx: &Ctx, report: &mut Report) {
     if let Some(kind) = pane.agent.clone() {
@@ -712,35 +920,7 @@ fn restore_occupant(pane: &PaneSnap, new_pane_id: &str, ctx: &Ctx, report: &mut 
             .filter(|v| !v.trim().is_empty())
             .filter(|_| pane.agent_session_kind.as_deref() == Some("id"));
         match session {
-            Some(id) => match agents::resume_args(ctx.cfg, &kind, &id) {
-                Some((args, confidence)) => {
-                    match start_agent(&kind, &args, new_pane_id, pane, ctx, report) {
-                        Ok(name) => {
-                            linfo!("resumed {kind} as '{name}' in {new_pane_id} ({})", confidence.as_str());
-                            report.resumed += 1;
-                        }
-                        Err(e) => {
-                            report.fail(format!(
-                                "{new_pane_id}: could not resume {kind}: {}",
-                                e.message
-                            ));
-                            if e.safe_to_prefill {
-                                let mut argv = vec![kind.clone()];
-                                argv.extend(args);
-                                prefill(&argv, new_pane_id, ctx, report);
-                            } else {
-                                report.note(format!(
-                                    "{new_pane_id}: not prefilling — herdr may still be starting \
-                                     the agent in this pane"
-                                ));
-                            }
-                        }
-                    }
-                }
-                None => report.fail(format!(
-                    "{new_pane_id}: cannot resume {kind} (unsupported kind; set [resume.{kind}] in config.toml)"
-                )),
-            },
+            Some(id) => restore_agent(&kind, &id, pane, new_pane_id, ctx, report),
             None => report.fail(format!(
                 "{new_pane_id}: cannot resume {kind} (no session id captured)"
             )),

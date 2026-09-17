@@ -9,7 +9,7 @@ mod common;
 use common::*;
 use reopen::config::{Config, RerunMode};
 use reopen::model::*;
-use reopen::restore::{self, Ctx};
+use reopen::restore;
 use reopen::store::Store;
 use serde_json::{json, Value};
 
@@ -137,7 +137,7 @@ fn a_tab_restore_applies_one_layout_and_moves_it_to_its_remembered_index() {
         Granularity::Tab,
         workspace("w1", Some("scratch"), vec![tab]),
     );
-    let report = restore::run(&e, &Ctx::new(&fake, &st, &cfg));
+    let report = restore::run(&e, &test_ctx(&fake, &st, &cfg, None));
 
     assert!(report.ok, "{report:?}");
     assert_eq!(fake.count("workspace.create"), 0, "the workspace was alive");
@@ -171,7 +171,7 @@ fn layout_apply_carries_no_pane_ids_and_a_ratio_on_every_split() {
         ),
     );
     let e = entry(Granularity::Tab, workspace("w1", None, vec![tab]));
-    restore::run(&e, &Ctx::new(&fake, &st, &cfg));
+    restore::run(&e, &test_ctx(&fake, &st, &cfg, None));
 
     let root = &fake.calls_to("layout.apply")[0]["root"];
     fn check(n: &Value) {
@@ -205,7 +205,7 @@ fn a_pane_whose_tab_and_workspace_are_both_gone_escalates_to_one_new_workspace()
     let mut tab = tab_snap("w1:t1", "w1", 0, None, layout);
     tab.panes = vec![pane("w1:p2", "w1:t1", "w1", "/private/tmp")];
     let e = entry(Granularity::Pane, workspace("w1", None, vec![tab]));
-    let report = restore::run(&e, &Ctx::new(&fake, &st, &cfg));
+    let report = restore::run(&e, &test_ctx(&fake, &st, &cfg, None));
 
     assert!(report.ok, "{report:?}");
     assert_eq!(fake.count("workspace.create"), 1);
@@ -242,7 +242,7 @@ fn a_workspace_that_is_still_alive_only_gets_its_missing_tabs_back() {
     );
     let report = restore::run(
         &entry(Granularity::Workspace, ws),
-        &Ctx::new(&fake, &st, &cfg),
+        &test_ctx(&fake, &st, &cfg, None),
     );
 
     assert_eq!(fake.count("workspace.create"), 0);
@@ -269,7 +269,7 @@ fn every_layout_is_applied_before_the_ascending_tab_move_pass() {
     );
     restore::run(
         &entry(Granularity::Workspace, ws),
-        &Ctx::new(&fake, &st, &cfg),
+        &test_ctx(&fake, &st, &cfg, None),
     );
 
     let seq = fake.sequence();
@@ -321,7 +321,7 @@ fn a_pane_whose_sibling_is_a_single_live_leaf_keeps_its_ratio_and_is_swapped_bac
         split(SplitDir::Right, 0.3, leaf("w1:p1"), leaf("w1:p2")),
         "w1:p1",
     );
-    let report = restore::run(&e, &Ctx::new(&fake, &st, &cfg));
+    let report = restore::run(&e, &test_ctx(&fake, &st, &cfg, None));
 
     let sp = &fake.calls_to("pane.split")[0];
     assert_eq!(sp["target_pane_id"], "w1:p2");
@@ -346,7 +346,7 @@ fn a_pane_whose_sibling_is_a_subtree_gets_the_complement_ratio_no_swap_and_a_not
     let (_d, st) = store();
     let cfg = cfg_no_focus();
     let e = pane_entry(split(SplitDir::Right, 0.3, leaf("w1:p1"), sibling), "w1:p1");
-    let report = restore::run(&e, &Ctx::new(&fake, &st, &cfg));
+    let report = restore::run(&e, &test_ctx(&fake, &st, &cfg, None));
 
     let sp = &fake.calls_to("pane.split")[0];
     assert!(
@@ -387,7 +387,10 @@ fn the_alias_ladder_retries_on_agent_name_taken_and_reports_one_resume() {
     });
     let (_d, st) = store();
     let cfg = cfg_no_focus();
-    let report = restore::run(&agent_entry(Some("study")), &Ctx::new(&fake, &st, &cfg));
+    let report = restore::run(
+        &agent_entry(Some("study")),
+        &test_ctx(&fake, &st, &cfg, None),
+    );
 
     let names: Vec<String> = fake
         .calls_to("agent.start")
@@ -416,7 +419,10 @@ fn an_exhausted_alias_ladder_fails_once_instead_of_looping() {
     });
     let (_d, st) = store();
     let cfg = cfg_no_focus();
-    let report = restore::run(&agent_entry(Some("study")), &Ctx::new(&fake, &st, &cfg));
+    let report = restore::run(
+        &agent_entry(Some("study")),
+        &test_ctx(&fake, &st, &cfg, None),
+    );
 
     assert_eq!(
         fake.count("agent.start"),
@@ -445,7 +451,10 @@ fn a_busy_pane_is_retried_until_it_settles() {
     });
     let (_d, st) = store();
     let cfg = cfg_no_focus();
-    let report = restore::run(&agent_entry(Some("busy")), &Ctx::new(&fake, &st, &cfg));
+    let report = restore::run(
+        &agent_entry(Some("busy")),
+        &test_ctx(&fake, &st, &cfg, None),
+    );
 
     assert_eq!(fake.count("agent.start"), 4);
     // the alias never changes for a busy pane — only for a taken name
@@ -471,7 +480,10 @@ fn a_transport_timeout_never_types_into_a_pane_that_may_be_starting_an_agent() {
     });
     let (_d, st) = store();
     let cfg = cfg_no_focus();
-    let report = restore::run(&agent_entry(Some("slow")), &Ctx::new(&fake, &st, &cfg));
+    let report = restore::run(
+        &agent_entry(Some("slow")),
+        &test_ctx(&fake, &st, &cfg, None),
+    );
 
     assert_eq!(fake.count("agent.start"), 1, "a timeout is not retried");
     assert_eq!(fake.count("pane.send_text"), 0, "MUST NOT prefill");
@@ -491,7 +503,7 @@ fn a_server_side_agent_start_timeout_is_treated_as_probably_started() {
     });
     let (_d, st) = store();
     let cfg = cfg_no_focus();
-    let report = restore::run(&agent_entry(None), &Ctx::new(&fake, &st, &cfg));
+    let report = restore::run(&agent_entry(None), &test_ctx(&fake, &st, &cfg, None));
     assert_eq!(report.resumed, 1);
     assert_eq!(fake.count("pane.send_text"), 0);
     assert!(report
@@ -516,7 +528,7 @@ fn a_non_agent_pane_is_prefilled_but_never_executed_unless_rerun_is_on() {
     let fake = Fake::new(default_reply(empty_world()));
     let (_d, st) = store();
     let cfg = cfg_no_focus();
-    let report = restore::run(&e, &Ctx::new(&fake, &st, &cfg));
+    let report = restore::run(&e, &test_ctx(&fake, &st, &cfg, None));
     assert_eq!(report.prefilled, 1);
     assert_eq!(
         fake.calls_to("pane.send_text")[0]["text"],
@@ -539,7 +551,7 @@ fn a_non_agent_pane_is_prefilled_but_never_executed_unless_rerun_is_on() {
         },
         ..Default::default()
     };
-    restore::run(&e, &Ctx::new(&fake, &st, &cfg));
+    restore::run(&e, &test_ctx(&fake, &st, &cfg, None));
     assert_eq!(fake.count("pane.send_keys"), 1);
 }
 
@@ -564,7 +576,7 @@ fn a_broken_deny_pattern_stops_every_rerun_instead_of_failing_open() {
         },
         ..Default::default()
     };
-    let report = restore::run(&e, &Ctx::new(&fake, &st, &cfg));
+    let report = restore::run(&e, &test_ctx(&fake, &st, &cfg, None));
     assert_eq!(fake.count("pane.send_keys"), 0, "fails CLOSED");
     assert_eq!(report.prefilled, 1);
 }
@@ -585,7 +597,7 @@ fn the_remembered_focused_pane_is_focused_through_the_positional_map() {
     let fake = Fake::new(default_reply(empty_world()));
     let (_d, st) = store();
     let cfg = Config::default(); // focus_on_reopen = true
-    let report = restore::run(&e, &Ctx::new(&fake, &st, &cfg));
+    let report = restore::run(&e, &test_ctx(&fake, &st, &cfg, None));
 
     let focused: Vec<String> = fake
         .calls_to("pane.focus")
@@ -605,7 +617,7 @@ fn ids_a_restore_created_are_not_captured_as_a_new_close_until_the_ttl_expires()
     let tab = tab_snap("w1:t1", "w1", 0, None, leaf("w1:p1"));
     let report = restore::run(
         &entry(Granularity::Tab, workspace("w1", None, vec![tab])),
-        &Ctx::new(&fake, &st, &cfg),
+        &test_ctx(&fake, &st, &cfg, None),
     );
     let new_pane = report.created.panes[0].clone();
 
@@ -614,4 +626,205 @@ fn ids_a_restore_created_are_not_captured_as_a_new_close_until_the_ttl_expires()
     assert!(!st.is_self_created("someone:else", now));
     // …and the exclusion is time-boxed, so a genuine close later is still captured
     assert!(!st.is_self_created(&new_pane, now + reopen::SELF_CREATED_TTL_MS + 1));
+}
+
+// ------------------------------------------- F21: the pane must come back with an agent
+//
+// The user-visible defect: a brand-new `claude` with zero turns was closed and reopened.
+// herdr had a session id, so reopen ran `claude --resume <id>`, and claude answered
+// `No conversation found with session ID: …` and exited — leaving the "restored" pane at
+// a bare shell. Two guards, both asserted here: the transcript pre-check, and the
+// generic post-start liveness check with exactly one no-resume fallback.
+
+/// `pane.process_info` for a pane sitting at a bare prompt.
+fn shell_only() -> Value {
+    json!({"process_info": {
+        "pane_id": "new:p1", "shell_pid": 100,
+        "foreground_processes": [{"pid": 100, "argv0": "zsh", "argv": ["-zsh"], "cwd": "/private/tmp"}]
+    }})
+}
+
+/// `pane.process_info` for a pane running claude (shape copied from a live herdr: the
+/// process `name` is the version string, only `argv0` identifies it).
+fn claude_running() -> Value {
+    json!({"process_info": {
+        "pane_id": "new:p1", "shell_pid": 100,
+        "foreground_processes": [
+            {"pid": 100, "argv0": "zsh", "argv": ["-zsh"], "cwd": "/private/tmp"},
+            {"pid": 200, "argv0": "claude", "argv": ["claude"], "cwd": "/private/tmp"}
+        ]
+    }})
+}
+
+/// A projects store containing the transcript for `sess-1` in the pane's own cwd.
+fn projects_with_transcript() -> tempfile::TempDir {
+    let d = tempfile::tempdir().unwrap();
+    let p = d
+        .path()
+        .join(reopen::transcript::encode_cwd("/private/tmp"));
+    std::fs::create_dir_all(&p).unwrap();
+    std::fs::write(p.join("sess-1.jsonl"), "{}\n").unwrap();
+    d
+}
+
+fn start_args(fake: &Fake) -> Vec<Value> {
+    fake.calls_to("agent.start")
+        .iter()
+        .map(|p| p["args"].clone())
+        .collect()
+}
+
+#[test]
+fn a_claude_session_with_no_transcript_is_started_fresh_instead_of_resumed() {
+    let projects = tempfile::tempdir().unwrap(); // exists, and is empty
+    let fake = Fake::new(default_reply(empty_world()));
+    let (_d, st) = store();
+    let cfg = cfg_no_focus();
+    let report = restore::run(
+        &agent_entry(Some("study")),
+        &test_ctx(&fake, &st, &cfg, Some(projects.path().to_path_buf())),
+    );
+
+    assert_eq!(fake.count("agent.start"), 1);
+    assert_eq!(start_args(&fake), [json!([])], "no --resume at all");
+    assert_eq!(report.started_fresh, 1);
+    assert_eq!(report.resumed, 0);
+    assert!(report.failed.is_empty(), "{report:?}");
+    assert!(
+        report
+            .notes
+            .iter()
+            .any(|n| n.contains("no conversation to resume")),
+        "{:?}",
+        report.notes
+    );
+    // Nothing to verify: we never asked herdr to resume anything.
+    assert_eq!(fake.count("pane.process_info"), 0);
+}
+
+#[test]
+fn a_resumed_agent_that_exits_immediately_is_restarted_once_without_resume_args() {
+    let projects = projects_with_transcript();
+    let base = default_reply(empty_world());
+    let fake = Fake::new(move |m: &str, p: &Value, n: usize| {
+        if m == "pane.process_info" {
+            return Ok(shell_only());
+        }
+        base(m, p, n)
+    });
+    let (_d, st) = store();
+    let cfg = cfg_no_focus();
+    let report = restore::run(
+        &agent_entry(Some("study")),
+        &test_ctx(&fake, &st, &cfg, Some(projects.path().to_path_buf())),
+    );
+
+    assert_eq!(
+        start_args(&fake),
+        [json!(["--resume", "sess-1"]), json!([])],
+        "resume first, then exactly one fresh start"
+    );
+    assert_eq!(report.started_fresh, 1);
+    assert_eq!(report.resumed, 0);
+    assert!(report
+        .notes
+        .iter()
+        .any(|n| n.contains("exited immediately after --resume")));
+}
+
+#[test]
+fn a_live_agent_is_never_restarted() {
+    let projects = projects_with_transcript();
+    let base = default_reply(empty_world());
+    let fake = Fake::new(move |m: &str, p: &Value, n: usize| {
+        if m == "pane.process_info" {
+            return Ok(claude_running());
+        }
+        base(m, p, n)
+    });
+    let (_d, st) = store();
+    let cfg = cfg_no_focus();
+    let report = restore::run(
+        &agent_entry(Some("study")),
+        &test_ctx(&fake, &st, &cfg, Some(projects.path().to_path_buf())),
+    );
+
+    assert_eq!(fake.count("agent.start"), 1);
+    assert_eq!(start_args(&fake), [json!(["--resume", "sess-1"])]);
+    assert_eq!(report.resumed, 1);
+    assert_eq!(report.started_fresh, 0);
+}
+
+#[test]
+fn one_transient_empty_sample_does_not_kill_a_slow_starting_agent() {
+    // A cold start can leave the shell alone in `process_info` for a moment. Only two
+    // CONSECUTIVE bare-shell samples count as an exit.
+    let projects = projects_with_transcript();
+    let base = default_reply(empty_world());
+    let fake = Fake::new(move |m: &str, p: &Value, n: usize| {
+        if m == "pane.process_info" {
+            return Ok(if n == 0 {
+                shell_only()
+            } else {
+                claude_running()
+            });
+        }
+        base(m, p, n)
+    });
+    let (_d, st) = store();
+    let cfg = cfg_no_focus();
+    let report = restore::run(
+        &agent_entry(Some("study")),
+        &test_ctx(&fake, &st, &cfg, Some(projects.path().to_path_buf())),
+    );
+
+    assert_eq!(fake.count("agent.start"), 1, "no fallback");
+    assert_eq!(report.resumed, 1);
+}
+
+#[test]
+fn a_pane_we_cannot_observe_is_left_alone() {
+    let projects = projects_with_transcript();
+    let base = default_reply(empty_world());
+    let fake = Fake::new(move |m: &str, p: &Value, n: usize| {
+        if m == "pane.process_info" {
+            return Err(remote("pane_not_found"));
+        }
+        base(m, p, n)
+    });
+    let (_d, st) = store();
+    let cfg = cfg_no_focus();
+    let report = restore::run(
+        &agent_entry(Some("study")),
+        &test_ctx(&fake, &st, &cfg, Some(projects.path().to_path_buf())),
+    );
+
+    assert_eq!(fake.count("agent.start"), 1, "never guess from no data");
+    assert_eq!(report.resumed, 1);
+    assert_eq!(report.started_fresh, 0);
+}
+
+#[test]
+fn the_pre_check_only_applies_to_claude() {
+    // An empty projects store says nothing about a codex session, so codex still resumes.
+    let projects = tempfile::tempdir().unwrap();
+    let base = default_reply(empty_world());
+    let fake = Fake::new(move |m: &str, p: &Value, n: usize| {
+        if m == "pane.process_info" {
+            return Ok(claude_running());
+        }
+        base(m, p, n)
+    });
+    let (_d, st) = store();
+    let cfg = cfg_no_focus();
+    let mut e = agent_entry(Some("study"));
+    e.workspace.tabs[0].panes[0].agent = Some("codex".into());
+    let report = restore::run(
+        &e,
+        &test_ctx(&fake, &st, &cfg, Some(projects.path().to_path_buf())),
+    );
+
+    assert_eq!(start_args(&fake), [json!(["resume", "sess-1"])]);
+    assert_eq!(report.resumed, 1);
+    assert_eq!(report.started_fresh, 0);
 }

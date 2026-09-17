@@ -32,3 +32,9 @@ If you observe herdr behaving differently, please update this file in the same P
 12. `pane.process_info`'s `name` is the process *title* (claude shows `"2.1.274"`), so
     matching must use `argv0`.
 
+13. `pane.process_info` on a pane running an agent lists the agent among
+    `foreground_processes` with `argv0` set to the binary (`claude`), even though its
+    `name` is the version string. A pane whose only foreground process is its own shell
+    is genuinely idle — which is how "the agent I just started has already exited" is
+    detected. `agent_status` cannot answer that: its enum is
+    `idle|working|blocked|done|unknown`, with no "starting" and no "gone".
