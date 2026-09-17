@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e1e2e"/>
+      <stop offset="1" stop-color="#181825"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="420" rx="18" fill="url(#bg)"/>
+
+  <!-- title -->
+  <text x="60" y="88" fill="#cdd6f4" font-size="44" font-weight="700">reopen</text>
+  <text x="228" y="88" fill="#6c7086" font-size="26">— undo close for herdr</text>
+  <text x="60" y="126" fill="#a6adc8" font-size="19">Closed the wrong pane? <tspan fill="#f9e2af" font-weight="700">prefix + u</tspan> puts it back where it was and resumes its agent.</text>
+
+  <!-- BEFORE window -->
+  <g transform="translate(60,170)" filter="url(#shadow)">
+    <rect width="460" height="200" rx="10" fill="#11111b" stroke="#313244"/>
+    <rect width="460" height="26" rx="10" fill="#181825"/>
+    <circle cx="16" cy="13" r="5" fill="#f38ba8"/><circle cx="32" cy="13" r="5" fill="#f9e2af"/><circle cx="48" cy="13" r="5" fill="#a6e3a1"/>
+    <text x="230" y="18" fill="#6c7086" font-size="12" text-anchor="middle">workspace core · tab api</text>
+    <!-- left pane -->
+    <rect x="10" y="36" width="215" height="154" rx="4" fill="#1e1e2e" stroke="#313244"/>
+    <text x="20" y="56" fill="#89b4fa" font-size="12">~/core/api</text>
+    <text x="20" y="76" fill="#a6e3a1" font-size="12">❯ cargo watch -x test</text>
+    <text x="20" y="96" fill="#6c7086" font-size="12">running 42 tests…</text>
+    <!-- right pane (about to die) -->
+    <rect x="235" y="36" width="215" height="154" rx="4" fill="#1e1e2e" stroke="#f38ba8" stroke-dasharray="5 4"/>
+    <text x="245" y="56" fill="#89b4fa" font-size="12">~/core</text>
+    <text x="245" y="76" fill="#cba6f7" font-size="12">✻ claude · backend-caching</text>
+    <text x="245" y="96" fill="#a6adc8" font-size="12">session 43db8b17…</text>
+    <text x="245" y="116" fill="#a6adc8" font-size="12">&gt; plan the cache layer</text>
+    <text x="342" y="170" fill="#f38ba8" font-size="13" text-anchor="middle">prefix+x  ✕</text>
+  </g>
+
+  <!-- arrow -->
+  <g transform="translate(540,250)">
+    <path d="M0 20 H90" stroke="#f9e2af" stroke-width="4" stroke-linecap="round"/>
+    <path d="M78 6 L96 20 L78 34" fill="none" stroke="#f9e2af" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="48" y="-4" fill="#f9e2af" font-size="16" font-weight="700" text-anchor="middle">prefix+u</text>
+  </g>
+
+  <!-- AFTER window -->
+  <g transform="translate(680,170)" filter="url(#shadow)">
+    <rect width="460" height="200" rx="10" fill="#11111b" stroke="#313244"/>
+    <rect width="460" height="26" rx="10" fill="#181825"/>
+    <circle cx="16" cy="13" r="5" fill="#f38ba8"/><circle cx="32" cy="13" r="5" fill="#f9e2af"/><circle cx="48" cy="13" r="5" fill="#a6e3a1"/>
+    <text x="230" y="18" fill="#6c7086" font-size="12" text-anchor="middle">workspace core · tab api</text>
+    <rect x="10" y="36" width="215" height="154" rx="4" fill="#1e1e2e" stroke="#313244"/>
+    <text x="20" y="56" fill="#89b4fa" font-size="12">~/core/api</text>
+    <text x="20" y="76" fill="#a6e3a1" font-size="12">❯ cargo watch -x test</text>
+    <text x="20" y="96" fill="#6c7086" font-size="12">running 42 tests…</text>
+    <rect x="235" y="36" width="215" height="154" rx="4" fill="#1e1e2e" stroke="#a6e3a1"/>
+    <text x="245" y="56" fill="#89b4fa" font-size="12">~/core</text>
+    <text x="245" y="76" fill="#cba6f7" font-size="12">✻ claude --resume 43db8b17…</text>
+    <text x="245" y="96" fill="#a6adc8" font-size="12">Resuming conversation…</text>
+    <text x="245" y="116" fill="#a6adc8" font-size="12">&gt; plan the cache layer</text>
+    <text x="342" y="170" fill="#a6e3a1" font-size="12" text-anchor="middle">same tab · same cwd · resumed</text>
+  </g>
+</svg>
