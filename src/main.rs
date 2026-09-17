@@ -235,6 +235,8 @@ fn cmd_snapshot(app: &App) {
 }
 
 fn cmd_list(app: &App, as_json: bool) {
+    // Any user-facing action arms the daemon: a fresh install has seen no event yet.
+    daemon::ensure_running(&app.store);
     let stack = app.store.closed();
     if as_json {
         println!(
@@ -275,6 +277,7 @@ fn cmd_list(app: &App, as_json: bool) {
 
 fn cmd_reopen(app: &App, id: Option<u64>) {
     check_protocol(app);
+    daemon::ensure_running(&app.store);
     // Pop under the lock so two invocations cannot restore the same entry.
     let entry = {
         let _g = app.store.lock();
@@ -346,6 +349,10 @@ fn cmd_pick(app: &App) {
 }
 
 fn cmd_doctor(app: &App) {
+    // Doctor is what people run right after installing: make sure the snapshot exists and
+    // the daemon is armed before reporting on them, instead of waiting for the first event.
+    snapshot::refresh_if_stale(&app.client, &app.store, 2_000, app.cfg.process_info_ttl_ms);
+    daemon::ensure_running(&app.store);
     let mut out = serde_json::Map::new();
     out.insert("plugin_id".into(), json!(app.env.plugin_id));
     out.insert("state_dir".into(), json!(app.env.state_dir));

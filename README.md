@@ -64,7 +64,11 @@ description = "Reopen last closed pane/tab/workspace"
 
 ```sh
 herdr server reload-config
+herdr plugin action invoke rchougule.reopen.doctor   # arms the snapshot daemon right away
 ```
+
+The plugin arms itself on the next herdr event or server start; running `doctor` once after
+installing does it immediately and confirms the keybinding is in place.
 
 ## Usage
 
