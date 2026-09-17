@@ -1,0 +1,5 @@
+{"_note":"verbatim create-event payloads captured on a live herdr 0.9.1 server",
+ "workspace_created": {"event":"workspace_created","data":{"type":"workspace_created","workspace":{"workspace_id":"w3G","number":11,"label":"reopen-probe-ws","focused":false,"pane_count":1,"tab_count":1,"active_tab_id":"w3G:t1","agent_status":"unknown"}}},
+ "tab_created": {"event":"tab_created","data":{"type":"tab_created","tab":{"tab_id":"w3G:t1","workspace_id":"w3G","number":1,"label":"1","focused":false,"pane_count":1,"agent_status":"unknown"}}},
+ "pane_created": {"event":"pane_created","data":{"type":"pane_created","pane":{"pane_id":"w3G:p1","terminal_id":"term_65bb129c2ac2517","workspace_id":"w3G","tab_id":"w3G:t1","focused":false,"cwd":"/private/tmp","foreground_cwd":"/private/tmp","agent_status":"unknown","scroll":{"offset_from_bottom":0,"max_offset_from_bottom":0,"viewport_rows":76},"revision":0}}}
+}

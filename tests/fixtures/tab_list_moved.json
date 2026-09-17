@@ -1,0 +1,5 @@
+{"id":"probe1","result":{"type":"tab_list","tabs":[
+  {"tab_id":"w3M:t4","workspace_id":"w3M","number":4,"label":"third","focused":false,"pane_count":1,"agent_status":"unknown"},
+  {"tab_id":"w3M:t3","workspace_id":"w3M","number":3,"label":"2","focused":false,"pane_count":3,"agent_status":"unknown"},
+  {"tab_id":"w3M:t2","workspace_id":"w3M","number":2,"label":"applied-tab","focused":false,"pane_count":3,"agent_status":"unknown"}
+]}}

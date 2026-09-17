@@ -1,0 +1,10 @@
+{"_note":"raw socket lines captured from a live herdr 0.9.1 socket (protocol 22)",
+ "pong": "{\"id\":\"probe1\",\"result\":{\"type\":\"pong\",\"version\":\"0.9.1\",\"protocol\":22,\"capabilities\":{\"live_handoff\":true,\"detached_server_daemon\":true,\"endpoint_protocol_generation\":1,\"surface_interest\":true,\"health_check\":true}}}",
+ "error_pane_not_found": "{\"error\":{\"code\":\"pane_not_found\",\"message\":\"pane w3G:p9 not found\"},\"id\":\"cli:pane:get\"}",
+ "error_agent_name_taken": "{\"error\":{\"code\":\"agent_name_taken\",\"message\":\"agent name ok-name_1 is already used; candidates: terminal_id=term_65bb169435a2235 pane_id=w3M:pA workspace_id=w3M tab_id=w3M:t4 cwd=/private/tmp status=Blocked\"},\"id\":\"probe1\"}",
+ "error_invalid_agent_name": "{\"error\":{\"code\":\"invalid_agent_name\",\"message\":\"agent name must start with a lowercase letter and contain only lowercase letters, digits, '-' or '_' (1-32 characters)\"},\"id\":\"probe1\"}",
+ "subscription_ack": "{\"id\":\"sub1\",\"result\":{\"type\":\"subscription_started\"}}",
+ "event_pane_created": "{\"data\":{\"pane\":{\"pane_id\":\"w3M:pB\",\"tab_id\":\"w3M:t4\",\"workspace_id\":\"w3M\",\"cwd\":\"/private/tmp\",\"terminal_id\":\"term_65bb16acb1dc036\",\"revision\":0},\"type\":\"pane_created\"},\"event\":\"pane_created\"}",
+ "event_layout_updated": "{\"data\":{\"layout\":{\"focused_pane_id\":\"w3M:pA\",\"panes\":[{\"pane_id\":\"w3M:pA\",\"focused\":true}],\"splits\":[],\"tab_id\":\"w3M:t4\",\"workspace_id\":\"w3M\",\"zoomed\":false},\"type\":\"layout_updated\"},\"event\":\"layout_updated\"}",
+ "garbage": "not json at all"
+}

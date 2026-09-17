@@ -1,0 +1,38 @@
+{"_note":"verbatim HERDR_PLUGIN_EVENT_JSON / HERDR_PLUGIN_CONTEXT_JSON captured by a probe plugin on a live herdr 0.9.1 server",
+ "pane_closed": {
+   "t0": 1789666355348,
+   "event": "pane.closed",
+   "event_json": {"event":"pane_closed","data":{"type":"pane_closed","pane_id":"w3G:p4","workspace_id":"w3G"}},
+   "context_json": {"workspace_id":"w3G","focused_pane_id":"w3G:p4","invocation_source":"api","correlation_id":"pane.closed"}
+ },
+ "pane_closed_last_of_ws": {
+   "t0": 1789667462044,
+   "event": "pane.closed",
+   "event_json": {"event":"pane_closed","data":{"type":"pane_closed","pane_id":"w3N:p1","workspace_id":"w3N"}},
+   "context_json": {"workspace_id":"w3N","focused_pane_id":"w3N:p1","invocation_source":"api","correlation_id":"pane.closed"}
+ },
+ "workspace_closed": {
+   "t0": 1789667462045,
+   "event": "workspace.closed",
+   "event_json": {"event":"workspace_closed","data":{"type":"workspace_closed","workspace_id":"w3N","workspace":{"workspace_id":"w3N","number":12,"label":"reopen-review-burst","focused":false,"pane_count":1,"tab_count":1,"active_tab_id":"w3N:t1","agent_status":"unknown"}}},
+   "context_json": {"workspace_id":"w3N","workspace_label":"reopen-review-burst","tab_id":"w3N:t1","invocation_source":"api","correlation_id":"workspace.closed"}
+ },
+ "workspace_closed_2tabs": {
+   "t0": 1789666412934,
+   "event": "workspace.closed",
+   "event_json": {"event":"workspace_closed","data":{"type":"workspace_closed","workspace_id":"w3J","workspace":{"workspace_id":"w3J","number":12,"label":"probe-ws4","focused":false,"pane_count":3,"tab_count":2,"active_tab_id":"w3J:t1","agent_status":"unknown"}}},
+   "context_json": {"workspace_id":"w3J","workspace_label":"probe-ws4","tab_id":"w3J:t1","invocation_source":"api","correlation_id":"workspace.closed"}
+ },
+ "tab_closed": {
+   "t0": 1789666384678,
+   "event": "tab.closed",
+   "event_json": {"event":"tab_closed","data":{"type":"tab_closed","tab_id":"w3G:t3","workspace_id":"w3G"}},
+   "context_json": {"workspace_id":"w3G","tab_id":"w3G:t3","invocation_source":"api","correlation_id":"tab.closed"}
+ },
+ "pane_exited": {
+   "t0": 1789666424477,
+   "event": "pane.exited",
+   "event_json": {"event":"pane_exited","data":{"type":"pane_exited","pane_id":"w3G:p9","workspace_id":"w3G"}},
+   "context_json": {"workspace_id":"w3G","workspace_label":"reopen-probe-ws","workspace_cwd":"/private/tmp","tab_id":"w3G:t1","tab_label":"1","focused_pane_id":"w3G:p9","focused_pane_cwd":"/private/tmp","focused_pane_status":"unknown","invocation_source":"api","correlation_id":"pane.exited"}
+ }
+}

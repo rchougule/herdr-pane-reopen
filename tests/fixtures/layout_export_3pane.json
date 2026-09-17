@@ -1,0 +1,7 @@
+{"id":"probe1","result":{"type":"layout_export","layout":{"workspace_id":"w3M","tab_id":"w3M:t1","zoomed":false,
+  "focused_pane_id":"w3M:p1",
+  "root":{"type":"split","direction":"right","ratio":0.3,
+    "first":{"type":"pane","pane_id":"w3M:p1","label":"leftie","cwd":"/private/tmp"},
+    "second":{"type":"split","direction":"down","ratio":0.5,
+      "first":{"type":"pane","pane_id":"w3M:p2","cwd":"/private/tmp"},
+      "second":{"type":"pane","pane_id":"w3M:p3","cwd":"/usr"}}}}}}

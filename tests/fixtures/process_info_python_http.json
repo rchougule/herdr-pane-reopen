@@ -1,0 +1,6 @@
+{"_note":"synthetic: a legitimate long-running foreground job whose argv0 must NOT be filtered.",
+ "id":"cli:pane:process_info","result":{"type":"pane_process_info","process_info":{
+  "pane_id":"w3G:p8","shell_pid":60100,"foreground_process_group_id":60111,
+  "foreground_processes":[
+    {"argv":["-zsh"],"argv0":"zsh","cmdline":"-zsh","cwd":"/private/tmp","name":"zsh","pid":60100},
+    {"argv":["python3","-m","http.server","8000"],"argv0":"python3","cmdline":"python3 -m http.server 8000","cwd":"/private/tmp","name":"python3","pid":60111}]}}}

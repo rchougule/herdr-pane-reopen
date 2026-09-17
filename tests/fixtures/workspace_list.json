@@ -1,0 +1,4 @@
+{"id":"cli:workspace:list","result":{"type":"workspace_list","workspaces":[
+  {"active_tab_id":"wH:t1","agent_status":"unknown","focused":false,"label":"caffe","number":1,"pane_count":1,"tab_count":1,"workspace_id":"wH"},
+  {"active_tab_id":"wJ:t2","agent_status":"idle","focused":false,"label":"sty","number":2,"pane_count":2,"tab_count":1,"workspace_id":"wJ"}
+]}}

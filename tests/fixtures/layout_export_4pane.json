@@ -1,0 +1,10 @@
+{"_note":"4-leaf nesting matching a live pane-layout probe on herdr 0.9.1 (split right / split down / split right) expressed in the layout.export tree shape verified against the live socket",
+ "id":"cli:layout:export","result":{"type":"layout_export","layout":{"workspace_id":"w3G","tab_id":"w3G:t1","zoomed":false,
+  "focused_pane_id":"w3G:p1",
+  "root":{"type":"split","direction":"right","ratio":0.5,
+    "first":{"type":"split","direction":"down","ratio":0.5,
+      "first":{"type":"split","direction":"right","ratio":0.5,
+        "first":{"type":"pane","pane_id":"w3G:p1","cwd":"/private/tmp"},
+        "second":{"type":"pane","pane_id":"w3G:p4","cwd":"/private/tmp"}},
+      "second":{"type":"pane","pane_id":"w3G:p3","cwd":"/private/tmp"}},
+    "second":{"type":"pane","pane_id":"w3G:p2","cwd":"/private/tmp"}}}}}

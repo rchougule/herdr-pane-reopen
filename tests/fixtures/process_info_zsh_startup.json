@@ -1,0 +1,7 @@
+{"_note":"REAL shape, reconstructed from the live QA failure: scenario 5 ran `tail -f /dev/null` in a pane, but the process_info sample landed inside zsh's own startup (oh-my-zsh compinit) and captured `mkdir -p ~/.oh-my-zsh/cache/completions` as the pane's foreground command.",
+ "id":"cli:pane:process_info","result":{"type":"pane_process_info","process_info":{
+  "pane_id":"w3G:p7","shell_pid":50286,"foreground_process_group_id":50286,
+  "foreground_processes":[
+    {"argv":["-zsh"],"argv0":"zsh","cmdline":"-zsh","cwd":"/private/tmp","name":"zsh","pid":50286},
+    {"argv":["mkdir","-p","/Users/chaugs/.oh-my-zsh/cache/completions"],"argv0":"mkdir","cmdline":"mkdir -p /Users/chaugs/.oh-my-zsh/cache/completions","cwd":"/Users/chaugs/.oh-my-zsh/cache/completions","name":"mkdir","pid":50291},
+    {"argv":["tail","-f","/dev/null"],"argv0":"tail","cmdline":"tail -f /dev/null","cwd":"/private/tmp","name":"tail","pid":50333}]}}}

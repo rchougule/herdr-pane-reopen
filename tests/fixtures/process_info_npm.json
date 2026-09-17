@@ -1,0 +1,7 @@
+{"_note":"synthetic: zsh + npm + node child, to exercise the smallest-pid pick",
+ "id":"cli:pane:process_info","result":{"type":"pane_process_info","process_info":{
+  "pane_id":"w3G:p7","shell_pid":50286,"foreground_process_group_id":50290,
+  "foreground_processes":[
+    {"argv":["-zsh"],"argv0":"zsh","cmdline":"-zsh","cwd":"/private/tmp","name":"zsh","pid":50286},
+    {"argv":["npm","run","dev"],"argv0":"npm","cmdline":"npm run dev","cwd":"/private/tmp","name":"npm","pid":50290},
+    {"argv":["node","/private/tmp/node_modules/.bin/vite"],"argv0":"node","cmdline":"node vite","cwd":"/private/tmp","name":"node","pid":50301}]}}}

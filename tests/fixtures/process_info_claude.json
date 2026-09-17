@@ -1,0 +1,5 @@
+{"id":"cli:pane:process_info","result":{"type":"pane_process_info","process_info":{
+  "pane_id":"w3F:p1","shell_pid":31326,"foreground_process_group_id":31798,
+  "foreground_processes":[
+    {"argv":["caffeinate","-i","-t","300"],"argv0":"caffeinate","cmdline":"caffeinate -i -t 300","cwd":"/Users/chaugs/Personal/herdr-pane-reopen","name":"caffeinate","pid":32987},
+    {"argv":["claude","--dangerously-skip-permissions"],"argv0":"claude","cmdline":"claude --dangerously-skip-permissions","cwd":"/Users/chaugs/Personal/herdr-pane-reopen","name":"2.1.274","pid":31798}]}}}
